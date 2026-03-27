@@ -20,6 +20,7 @@
     "templates",
     "README.md",
     "docs/README.ko.md",
+    "docs/README.en.md",
     "LICENSE"
   ],
   "main": "./dist/core/index.js",

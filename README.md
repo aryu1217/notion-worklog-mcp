@@ -1,81 +1,81 @@
+[English README](./docs/README.en.md)
+
 # notion-worklog-mcp
 
-`notion-worklog-mcp` is a local MCP server that helps an LLM turn Git activity into structured Notion work documentation.
+`notion-worklog-mcp`는 Git 작업 내역을 바탕으로 Notion에 작업내용 문서를 쌓을 수 있게 돕는 로컬 MCP 서버입니다.
 
-It is built for two common workflows:
+이 패키지는 두 가지 흐름을 기준으로 만들어졌습니다.
 
-1. Document the work you are doing right now.
-2. Reconstruct work from a past date or a specific commit.
+1. 지금 진행 중인 작업 문서화
+2. 과거 날짜 또는 특정 커밋 기준 작업 복원 문서화
 
-The server does not generate prose by itself. It provides:
+패키지 자체가 문장을 생성하지는 않습니다. 대신 아래를 제공합니다.
 
-- Git context collection
-- built-in templates
-- Notion target validation
-- safe append into a daily Notion page
+- Git 컨텍스트 수집
+- 내장 템플릿 제공
+- Notion 대상 검증
+- 날짜별 Notion 페이지 append
 
-Your MCP client or coding assistant writes the final Markdown after reading the context.
+최종 Markdown은 Codex, Cursor, Claude 같은 MCP 클라이언트가 작성합니다.
 
-## What This Is
+## 이 패키지가 하는 일
 
-This package is for teams or solo developers who want to keep a running work history in Notion without manually copying commit messages or writing every page from scratch.
+기본 동작은 다음과 같습니다.
 
-By default, it:
+- 현재 Git 저장소를 기준으로 작업 내용을 수집합니다.
+- 기본적으로 `Work Documentation Calendar`라는 Notion 데이터베이스를 생성하거나 재사용합니다.
+- 날짜별로 하루 1페이지를 사용합니다.
+- 검토가 끝난 Markdown을 해당 날짜 페이지 하단에 누적합니다.
 
-- uses your current Git repository as the source of truth
-- creates or reuses a Notion database called `Work Documentation Calendar`
-- stores one daily page per date
-- appends reviewed Markdown to the matching date page
+지원 범위:
 
-It supports:
+- 현재 변경사항 문서화
+- 과거 날짜 기준 문서화
+- 특정 커밋 기준 문서화
 
-- current work documentation
-- historical documentation by date
-- historical documentation by commit
+## 빠른 시작
 
-## Quick Start
+### 1. 패키지 설치
 
-### 1. Install the package
-
-You can install it locally in a project:
+프로젝트에 로컬 설치:
 
 ```bash
 npm install -D notion-worklog-mcp
 ```
 
-Or run it through `npx` in MCP configs:
+MCP 설정에서는 `npx`로 바로 실행할 수도 있습니다.
 
 ```bash
 npx --yes notion-worklog-mcp
 ```
 
-### 2. Create a Notion integration
+### 2. Notion Integration 생성
 
-1. Open `https://www.notion.so/profile/integrations`.
-2. Click `New integration`.
-3. Give it a name such as `Worklog MCP`.
-4. Enable at least these capabilities:
+1. `https://www.notion.so/profile/integrations`로 이동합니다.
+2. `New integration`을 누릅니다.
+3. 이름을 예: `Worklog MCP`로 정합니다.
+4. 아래 capability를 최소한 켭니다.
    - `read_content`
    - `update_content`
-5. Copy the internal integration token.
+5. Internal Integration Token을 복사합니다.
 
-### 3. Prepare a parent page in Notion
+### 3. 부모 페이지 준비
 
-1. Create or choose a normal Notion page that will hold your worklog database.
-2. Open the page menu.
-3. Use `Connections` or `Add connections`.
-4. Add the integration you created in the previous step.
+1. 작업 문서용 데이터베이스를 둘 일반 Notion 페이지를 하나 준비합니다.
+2. 페이지 우측 상단 메뉴를 엽니다.
+3. `Connections` 또는 `Add connections`를 누릅니다.
+4. 방금 만든 integration을 연결합니다.
 
-This page is the value you will use for `NOTION_PARENT_PAGE_ID`.
+이 페이지가 `NOTION_PARENT_PAGE_ID` 대상입니다.
 
-You can paste either:
+아래 둘 다 사용할 수 있습니다.
 
-- the page URL
-- the raw page ID
+- 페이지 URL
+- raw page ID
 
-### 4. Configure `.env`
+### 4. `.env` 설정
 
-Create `.env.local` in the repository you want to document.
+작업을 문서화할 저장소 루트에 `.env.local`을 만듭니다.
 
 ```bash
 NOTION_API_KEY=secret_xxx
@@ -85,282 +85,278 @@ WORKLOG_DATABASE_TITLE=Work Documentation Calendar
 WORKLOG_TIME_ZONE=Asia/Seoul
 ```
 
-Required values:
+필수 값:
 
 - `NOTION_API_KEY`
 - `NOTION_PARENT_PAGE_ID`
 
-Optional values:
+선택 값:
 
 - `NOTION_DATA_SOURCE_ID`
 - `WORKLOG_DATABASE_TITLE`
 - `WORKLOG_TIME_ZONE`
 - `WORKLOG_TEMPLATE_DIR`
 
-If `NOTION_DATA_SOURCE_ID` is empty, the server will:
+`NOTION_DATA_SOURCE_ID`를 비워두면 서버는 다음 규칙으로 동작합니다.
 
-- reuse an existing matching database under the parent page if it finds exactly one
-- create a new database on first append if it finds none
-- stop with an error if it finds more than one match
+- 부모 페이지 아래 같은 이름의 데이터베이스가 정확히 1개면 재사용
+- 없으면 첫 append 때 자동 생성
+- 2개 이상이면 오기록 방지를 위해 에러 반환
 
-### 5. Run the doctor command
+### 5. doctor 실행
 
-If you installed the package locally:
+로컬 설치한 경우:
 
 ```bash
 npx notion-worklog-mcp-doctor
 ```
 
-If you want to run the doctor without installing first:
+설치 없이 바로 확인하려면:
 
 ```bash
 npx --yes --package notion-worklog-mcp notion-worklog-mcp-doctor
 ```
 
-Success means you should see:
+정상이라면 아래를 확인할 수 있어야 합니다.
 
-- the current Git branch and merge-base information
-- whether Notion credentials were detected
-- whether the parent page is reachable
-- whether the worklog database already exists
+- 현재 Git 브랜치와 merge-base
+- Notion 환경변수 감지 여부
+- 부모 페이지 접근 가능 여부
+- worklog 데이터베이스 존재 여부
 
-## Add The MCP Server
+## MCP 서버 연결
 
 ### Codex
 
-The simplest option is:
+가장 간단한 연결 방법:
 
 ```bash
 codex mcp add worklog -- npx --yes notion-worklog-mcp
 ```
 
-If your MCP setup uses JSON snippets, see [examples/codex.mcp.json](./examples/codex.mcp.json).
+JSON 스니펫이 필요하면 [examples/codex.mcp.json](./examples/codex.mcp.json)을 참고하세요.
 
 ### Cursor
 
-Use the example in [examples/cursor.mcp.json](./examples/cursor.mcp.json).
+[examples/cursor.mcp.json](./examples/cursor.mcp.json)을 사용하면 됩니다.
 
 ### Claude Desktop
 
-Use the example in [examples/claude_desktop_config.json](./examples/claude_desktop_config.json).
+[examples/claude_desktop_config.json](./examples/claude_desktop_config.json)을 사용하면 됩니다.
 
-## Current Work Documentation
+## 현재 작업 문서화
 
-Use this when you want to document the work currently in progress, including:
+이 모드는 아래 상황에 적합합니다.
 
-- working tree changes
-- staged changes
-- commits since merge-base
-- remaining follow-up work
+- working tree 변경사항 정리
+- staged 변경사항 정리
+- merge-base 이후 커밋 요약
+- 아직 남은 후속 작업 정리
 
-Recommended tool flow:
+권장 흐름:
 
 1. `validate_notion_target`
 2. `collect_current_work_context`
 3. `load_worklog_template` with `mode: "current"`
-4. ask the assistant to draft the Markdown
-5. review the draft
+4. assistant가 Markdown 초안 작성
+5. 초안 검토
 6. `append_worklog_entry`
 
-Example prompt:
+예시 프롬프트:
 
 ```text
-Document the work I have done so far. Use the current work template, keep the writing concise, and wait for my approval before appending to Notion.
+지금까지 한 작업을 문서화해줘. current 템플릿을 사용하고, 먼저 초안을 보여준 뒤 승인받고 Notion에 append해줘.
 ```
 
-## Historical Documentation By Date
+## 과거 날짜 기준 문서화
 
-Use this when you want to reconstruct work for a specific day.
+특정 날짜의 작업을 복원해서 문서화할 때 사용합니다.
 
-Recommended tool flow:
+권장 흐름:
 
 1. `validate_notion_target` with `entryDate`
 2. `collect_historical_work_context` with `date: "YYYY-MM-DD"`
 3. `load_worklog_template` with `mode: "historical"`
-4. ask the assistant to draft the Markdown
-5. review the draft
+4. assistant가 Markdown 초안 작성
+5. 초안 검토
 6. `append_worklog_entry` with the same `entryDate`
 
-Example prompt:
+예시 프롬프트:
 
 ```text
-Document the work from 2026-02-11 based on Git history. Use the historical template, do not add a Remaining Work section, and wait for my approval before appending.
+2026-02-11 작업 내용을 Git 기준으로 문서화해줘. historical 템플릿을 사용하고 Remaining Work 섹션은 넣지 말아줘.
 ```
 
-## Historical Documentation By Commit
+## 특정 커밋 기준 문서화
 
-Use this when you want a worklog page section for one exact commit.
+특정 커밋 1개를 중심으로 작업 내용을 복원하고 싶을 때 사용합니다.
 
-Recommended tool flow:
+권장 흐름:
 
-1. `validate_notion_target` with the commit date or the target date you want to use
+1. `validate_notion_target`
 2. `collect_historical_work_context` with `commit: "abc1234"`
 3. `load_worklog_template` with `mode: "historical"`
-4. ask the assistant to draft the Markdown
-5. review the draft
+4. assistant가 Markdown 초안 작성
+5. 초안 검토
 6. `append_worklog_entry`
 
-Example prompt:
+예시 프롬프트:
 
 ```text
-Document commit 92aaaf9 as a historical work item. Use the historical template and focus on what changed and why.
+커밋 92aaaf9를 historical work item으로 문서화해줘. 무엇이 바뀌었는지와 왜 그런 변경이 있었는지 중심으로 작성해줘.
 ```
 
-## Built-In Templates
+## 내장 템플릿
 
-The package ships with two templates:
+패키지에는 두 가지 템플릿이 포함됩니다.
 
 - [templates/current.md](./templates/current.md)
 - [templates/historical.md](./templates/historical.md)
 
-Template rules:
+규칙:
 
-- `current` includes a `Remaining Work` section
-- `historical` does not include a `Remaining Work` section
+- `current`는 `Remaining Work` 섹션 포함
+- `historical`은 `Remaining Work` 섹션 제외
 
-If you want your own templates, set:
+커스텀 템플릿을 쓰고 싶다면:
 
 ```bash
 WORKLOG_TEMPLATE_DIR=/absolute/or/relative/path/to/templates
 ```
 
-The directory must contain:
+이 디렉터리에는 아래 두 파일이 있어야 합니다.
 
 - `current.md`
 - `historical.md`
 
-## How Notion Storage Works
+## Notion 저장 구조
 
-The package uses a Notion database with:
+이 패키지는 아래 구조를 사용합니다.
 
-- page title as `YYYY-MM-DD`
-- a `Date` property set to the same date
-- one daily page per date
+- 페이지 제목: `YYYY-MM-DD`
+- `Date` 속성: 같은 날짜 문자열
+- 날짜별 1페이지
 
-Append behavior:
+append 규칙:
 
-- if the date page exists, the Markdown is appended
-- if the date page does not exist, it is created
-- if the database does not exist, it is created on first append
-- if multiple pages exist for the same date, the append is blocked
+- 날짜 페이지가 있으면 기존 페이지에 append
+- 날짜 페이지가 없으면 새로 생성
+- 데이터베이스가 없으면 첫 append에서 자동 생성
+- 같은 날짜 페이지가 2개 이상이면 append 차단
 
-## Tool Reference
+## Tool 설명
 
 ### `validate_notion_target`
 
-Checks:
+확인 항목:
 
-- credentials
-- parent page access
-- matching database/data source
-- target date page availability
+- 자격 증명
+- 부모 페이지 접근
+- 데이터베이스/데이터 소스 해석
+- 대상 날짜 페이지 접근 가능 여부
 
-Optional input:
+선택 입력:
 
 - `entryDate`
 
 ### `collect_current_work_context`
 
-Returns:
+반환 항목:
 
-- branch and merge-base info
-- commits since merge-base
-- staged and unstaged files
-- diff stats and excerpts
+- 브랜치와 merge-base 정보
+- merge-base 이후 커밋
+- staged / unstaged 파일
+- diff stat / excerpt
 
 ### `collect_historical_work_context`
 
-Accepts exactly one of:
+정확히 하나만 받습니다.
 
 - `date`
 - `commit`
 
-Returns:
+반환 항목:
 
-- reference date
-- relevant commits
-- changed files
+- 기준 날짜
+- 관련 커밋
+- 변경 파일
 - diff stat
 - diff excerpt
 
 ### `load_worklog_template`
 
-Accepts:
+입력:
 
 - `mode: "current" | "historical"`
 
 ### `append_worklog_entry`
 
-Accepts:
+입력:
 
 - `heading`
 - `markdown`
 - optional `entryDate`
 - optional `previewHash`
 
-## Troubleshooting
+## 트러블슈팅
 
 ### `NOTION_API_KEY or NOTION_PARENT_PAGE_ID is missing.`
 
-Check:
+확인할 것:
 
-- `.env.local` exists in the repository you are documenting
-- the keys are spelled correctly
-- your MCP client is launching the server from the intended project directory
+- 작업 대상 저장소 루트에 `.env.local`이 있는지
+- 키 이름이 정확한지
+- MCP 클라이언트가 의도한 디렉터리에서 서버를 실행하는지
 
 ### `NOTION_DATA_SOURCE_ID points to a data source that could not be found.`
 
-Check:
+확인할 것:
 
-- the database still exists
-- the integration still has access
-- the ID belongs to the same parent page you configured
+- 데이터베이스가 아직 존재하는지
+- integration 접근 권한이 유지되는지
+- 설정한 ID가 같은 부모 페이지 아래 데이터 소스인지
 
 ### `Found more than one matching worklog data source under the parent page.`
 
-Fix:
+해결:
 
-- set `NOTION_DATA_SOURCE_ID` explicitly
+- `NOTION_DATA_SOURCE_ID`를 명시적으로 설정
 
 ### `No commits were found on YYYY-MM-DD.`
 
-Check:
+확인할 것:
 
-- the date is correct
-- the repository actually has commits on that date in the configured timezone
-- `WORKLOG_TIME_ZONE` matches the timezone you expect
+- 날짜가 맞는지
+- 해당 날짜에 실제 커밋이 있는지
+- `WORKLOG_TIME_ZONE`이 기대한 시간대와 일치하는지
 
 ### `previewHash does not match the current payload.`
 
-This means the draft changed after review. Generate a new preview hash and try again.
+초안 검토 후 내용이 바뀐 상태입니다. 새 preview hash로 다시 시도해야 합니다.
 
 ## FAQ
 
-### Does this package generate the final text for me?
+### 이 패키지가 최종 문장까지 써주나요?
 
-No. It only provides Git context, templates, validation, and append operations. Your assistant writes the prose.
+아니요. Git 컨텍스트, 템플릿, Notion append 기능만 제공합니다. 실제 문장은 assistant가 작성합니다.
 
-### Why not use a generic Notion MCP server?
+### 일반 Notion MCP 서버 대신 왜 이걸 쓰나요?
 
-You can. This package exists because generic Notion tools do not usually include:
+일반 Notion 도구는 보통 아래를 한 번에 제공하지 않습니다.
 
-- Git-aware current work summaries
-- historical reconstruction by date or commit
-- built-in worklog templates
-- daily page creation and append rules
+- Git 기반 현재 작업 요약
+- 날짜/커밋 기준 과거 복원
+- 내장 worklog 템플릿
+- 날짜별 페이지 생성 및 append 규칙
 
-### Can I use it without an assistant?
+### assistant 없이도 쓸 수 있나요?
 
-Mostly yes. The `doctor` command is useful on its own, and the core module can be scripted. The main user experience is still MCP-first.
+어느 정도는 가능합니다. `doctor`와 core 모듈은 스크립트에서도 사용할 수 있습니다. 다만 주 사용 방식은 MCP입니다.
 
-### Does historical mode include a Remaining Work section?
+### historical 모드에 Remaining Work가 포함되나요?
 
-No. Historical mode is intentionally archive-focused.
+아니요. historical 모드는 아카이브 용도라 의도적으로 제외했습니다.
 
-### Can I use a custom database title?
+### 데이터베이스 제목을 바꿀 수 있나요?
 
-Yes. Set `WORKLOG_DATABASE_TITLE`.
-
-## Korean Documentation
-
-See [docs/README.ko.md](./docs/README.ko.md) for the Korean guide.
+네. `WORKLOG_DATABASE_TITLE`을 설정하면 됩니다.
