@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "worklog": {
+      "command": "npx",
+      "args": ["--yes", "notion-worklog-mcp"],
+      "env": {
+        "NOTION_API_KEY": "secret_xxx",
+        "NOTION_PARENT_PAGE_ID": "your_parent_page_id_or_url",
+        "NOTION_DATA_SOURCE_ID": "",
+        "WORKLOG_DATABASE_TITLE": "Work Documentation Calendar",
+        "WORKLOG_TIME_ZONE": "Asia/Seoul"
+      }
+    }
+  }
+}
